@@ -121,6 +121,7 @@ Deno.serve(async (req: Request) => {
     if (newlyMarkedPaid) {
       const resendKey = Deno.env.get("RESEND_API_KEY");
       const emailFrom = Deno.env.get("ZENVORA_EMAIL_FROM");
+      console.log("Purchase confirmation email: starting", { hasResendKey: Boolean(resendKey), hasSender: Boolean(emailFrom), hasCustomerEmail: Boolean(orderRow.customer_email), orderId });
       if (resendKey && emailFrom && orderRow.customer_email) {
         try {
           const { data: emailLink, error: emailLinkError } = await supabase.storage
@@ -140,15 +141,23 @@ Deno.serve(async (req: Request) => {
                 html: '<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;color:#241044"><h1 style="color:#6d28d9">Thank you for your purchase!</h1><p>Your payment has been verified.</p><p><strong>Ebook:</strong> ' + safeTitle + '</p><p><strong>Order reference:</strong> ' + safeOrder + '</p><p><a href="' + emailLink.signedUrl + '" style="display:inline-block;background:#6d28d9;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none">Download your ebook</a></p><p>This download link expires in 24 hours. Keep this email for your records.</p><p>— Zenvora Digital</p></div>',
               }),
             });
+            const emailResponseBody = await emailResponse.text();
             if (!emailResponse.ok) {
-              console.error("Purchase confirmation email failed:", emailResponse.status);
+              console.error("Purchase confirmation email failed:", emailResponse.status, emailResponseBody);
+            } else {
+              console.log("Purchase confirmation email accepted by Resend:", emailResponse.status, emailResponseBody);
             }
           }
         } catch (emailError) {
           console.error("Purchase confirmation email error:", emailError instanceof Error ? emailError.message : "unknown");
         }
       } else {
-        console.log("Confirmation email skipped: RESEND_API_KEY or ZENVORA_EMAIL_FROM is not configured.");
+        console.error("Confirmation email skipped: required configuration or customer email is missing.", {
+          hasResendKey: Boolean(resendKey),
+          hasSender: Boolean(emailFrom),
+          hasCustomerEmail: Boolean(orderRow.customer_email),
+          orderId,
+        });
       }
     }
 
