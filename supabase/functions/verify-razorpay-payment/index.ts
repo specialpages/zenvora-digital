@@ -43,7 +43,7 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(url, dbKey, { auth: { persistSession: false } });
     const { data: orderRow, error: lookupError } = await supabase.from("ebook_orders")
-      .select("id, ebook_id, amount_paise, currency, payment_status, razorpay_order_id, razorpay_payment_id")
+      .select("id, ebook_id, customer_name, customer_email, amount_paise, currency, payment_status, razorpay_order_id, razorpay_payment_id")
       .eq("razorpay_order_id", orderId).maybeSingle();
     if (lookupError || !orderRow) return reply({ error: "Order not found." }, 404);
 
@@ -89,6 +89,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Record payment once. Conditional update protects against concurrent verification attempts.
+    let newlyMarkedPaid = false;
     if (orderRow.payment_status === "pending") {
       const { data: updated, error: updateError } = await supabase.from("ebook_orders")
         .update({ payment_status: "paid", razorpay_payment_id: paymentId, paid_at: new Date().toISOString() })
@@ -115,6 +116,42 @@ Deno.serve(async (req: Request) => {
       console.error("Signed URL creation failed:", signError?.message ?? "unknown");
       return reply({ error: "Payment is recorded, but the download link could not be created. Contact support with your payment ID." }, 500);
     }
+    // Send a confirmation email only when this request first marks the order paid.
+    // Email failure must never undo a verified payment or block the checkout download.
+    if (newlyMarkedPaid) {
+      const resendKey = Deno.env.get("RESEND_API_KEY");
+      const emailFrom = Deno.env.get("ZENVORA_EMAIL_FROM");
+      if (resendKey && emailFrom && orderRow.customer_email) {
+        try {
+          const { data: emailLink, error: emailLinkError } = await supabase.storage
+            .from("ebooks").createSignedUrl(ebook.pdf_path, 86400);
+          if (emailLinkError || !emailLink?.signedUrl) {
+            console.error("Email download link creation failed:", emailLinkError?.message ?? "unknown");
+          } else {
+            const safeTitle = String(ebook.title).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]!));
+            const safeOrder = String(orderId).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]!));
+            const emailResponse = await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: { Authorization: "Bearer " + resendKey, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                from: emailFrom,
+                to: [orderRow.customer_email],
+                subject: "Your Zenvora Digital ebook purchase is confirmed",
+                html: '<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;color:#241044"><h1 style="color:#6d28d9">Thank you for your purchase!</h1><p>Your payment has been verified.</p><p><strong>Ebook:</strong> ' + safeTitle + '</p><p><strong>Order reference:</strong> ' + safeOrder + '</p><p><a href="' + emailLink.signedUrl + '" style="display:inline-block;background:#6d28d9;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none">Download your ebook</a></p><p>This download link expires in 24 hours. Keep this email for your records.</p><p>— Zenvora Digital</p></div>',
+              }),
+            });
+            if (!emailResponse.ok) {
+              console.error("Purchase confirmation email failed:", emailResponse.status);
+            }
+          }
+        } catch (emailError) {
+          console.error("Purchase confirmation email error:", emailError instanceof Error ? emailError.message : "unknown");
+        }
+      } else {
+        console.log("Confirmation email skipped: RESEND_API_KEY or ZENVORA_EMAIL_FROM is not configured.");
+      }
+    }
+
     return reply({ verified: true, ebook_title: ebook.title, download_url: signed.signedUrl, expires_in_seconds: 600 });
   } catch (error) {
     console.error("Verification error:", error instanceof Error ? error.message : "unknown");
