@@ -1,0 +1,13 @@
+(function(){
+  'use strict';
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function card(book){
+    var cover=book.cover?'<img src="'+esc(book.cover)+'" alt="'+esc(book.title)+'" loading="lazy">':'<div class="catalogue-cover" aria-label="'+esc(book.title)+'"><img src="assets/logo-mark.png" alt="" loading="lazy"><span>'+esc(book.coverText||book.title)+'</span></div>';
+    var hasBuy=book.buyUrl && book.buyUrl!=='#';
+    return '<article class="card glass reveal"><a class="card__media" href="ebook.html?id='+encodeURIComponent(book.id)+'" aria-label="'+esc(book.title)+'">'+cover+'<span class="badge badge--instant">Instant</span></a><div class="card__body"><h3 class="card__title"><a href="ebook.html?id='+encodeURIComponent(book.id)+'">'+esc(book.title)+'</a></h3><p class="card__vendor">'+esc(book.category||'Digital ebook')+'</p><p class="card__description">'+esc(book.description||'')+'</p><div class="price"><span class="price__now">₹'+Number(book.price||0).toLocaleString('en-IN')+'</span></div><a class="btn btn--small" href="ebook.html?id='+encodeURIComponent(book.id)+'">View ebook <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>'+(hasBuy?'':'<span class="small muted">Checkout not connected yet</span>')+'</div></article>';
+  }
+  function render(target,books){var el=document.getElementById(target);if(!el)return;var list=books.filter(function(b){return b.published!==false;});el.innerHTML=list.length?list.map(card).join(''):'<div class="empty glass"><p>No ebooks have been published yet.</p></div>';if(window.IntersectionObserver){el.querySelectorAll('.reveal').forEach(function(n){n.classList.add('is-in');});}}
+  fetch('ebook.json').then(function(r){if(!r.ok)throw Error('catalogue unavailable');return r.json();}).then(function(data){var books=Array.isArray(data.ebooks)?data.ebooks:[];render('new-release-products',books.slice(0,4));render('bestseller-products',books.slice(0,4));}).catch(function(){['new-release-products','bestseller-products'].forEach(function(id){var el=document.getElementById(id);if(el)el.innerHTML='<div class="empty glass"><p>We could not load the ebook catalogue. Please refresh the page.</p></div>';});});
+  var form=document.getElementById('sample-form');if(form)form.addEventListener('submit',function(e){e.preventDefault();var ok=document.getElementById('sample-success');if(ok)ok.hidden=false;});
+  var year=document.getElementById('year');if(year)year.textContent=new Date().getFullYear();
+})();

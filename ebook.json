@@ -1,7 +1,40 @@
 {
   "ebooks": [
-    {"id":"focus-starter","title":"The Focus Starter","category":"Productivity","price":149,"description":"A simple framework for planning your day, reducing distractions, and building momentum.","coverText":"THE FOCUS STARTER","cover":"","published":true,"buyUrl":"#","downloadUrl":""},
-    {"id":"digital-first","title":"Your Digital First Step","category":"Business","price":199,"description":"Explore the foundations of turning a useful idea into a small digital product.","coverText":"YOUR DIGITAL FIRST STEP","cover":"","published":true,"buyUrl":"#","downloadUrl":""},
-    {"id":"creative-notes","title":"Creative Notes","category":"Creativity","price":129,"description":"A compact prompt book for collecting ideas and turning them into projects.","coverText":"CREATIVE NOTES","cover":"","published":true,"buyUrl":"#","downloadUrl":""}
+    {
+      "id": "focus-starter",
+      "title": "The Focus Starter",
+      "category": "Productivity",
+      "price": 149,
+      "description": "A simple framework for planning your day, reducing distractions, and building momentum.",
+      "coverText": "THE FOCUS STARTER",
+      "cover": "",
+      "published": true,
+      "buyUrl": "#",
+      "downloadUrl": ""
+    },
+    {
+      "id": "digital-first",
+      "title": "Your Digital First Step",
+      "category": "Business",
+      "price": 199,
+      "description": "Explore the foundations of turning a useful idea into a small digital product.",
+      "coverText": "YOUR DIGITAL FIRST STEP",
+      "cover": "",
+      "published": true,
+      "buyUrl": "#",
+      "downloadUrl": ""
+    },
+    {
+      "id": "creative-notes",
+      "title": "Creative Notes",
+      "category": "Creativity",
+      "price": 129,
+      "description": "A compact prompt book for collecting ideas and turning them into projects.",
+      "coverText": "CREATIVE NOTES",
+      "cover": "",
+      "published": true,
+      "buyUrl": "#",
+      "downloadUrl": ""
+    }
   ]
 }
