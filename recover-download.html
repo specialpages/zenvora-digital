@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#2a1160"><title>Recover ebook download — Zenvora Digital</title>
+<link rel="icon" type="image/svg+xml" href="assets/zenvora-logo.svg"><link rel="stylesheet" href="assets/zenvora-theme.css">
+<script src="assets/zenvora-config.js"></script>
+<style>
+html,body{min-height:100%;background:#10072a!important;color:#f5f0ff!important}body{background:radial-gradient(ellipse at 15% 0%,#7c3aed77,transparent 45%),linear-gradient(145deg,#0d0620,#21104e 52%,#10072a)!important;background-attachment:fixed!important}.page{max-width:720px;margin:54px auto;padding:0 18px 60px}.panel{padding:clamp(22px,5vw,42px);border:1px solid #ffffff2b;border-radius:26px;background:#ffffff0d}h1{color:#fff;font-size:clamp(2rem,5vw,3rem)}label{display:block;margin:18px 0 7px;color:#e8dcff;font-weight:600}input{width:100%;box-sizing:border-box;padding:13px 14px;border-radius:12px;border:1px solid #a78bfa;background:#180c36;color:#fff;font:inherit}.muted{color:#d0bdf7;line-height:1.7}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}.status{display:none;margin-top:18px;padding:14px;border-radius:12px;overflow-wrap:anywhere}.status.show{display:block}.error{background:#7f1d1d55;border:1px solid #fca5a5}.ok{background:#14532d55;border:1px solid #86efac}
+</style></head>
+<body class="template-index"><main class="page"><div class="panel">
+<p class="eyebrow">CUSTOMER SUPPORT</p><h1>Recover your ebook</h1>
+<p class="muted">If you paid but lost your download link, enter the order ID, Razorpay payment ID and the email address used at checkout. We verify the payment with Razorpay before creating a temporary download link.</p>
+<form id="recoverForm">
+<label for="orderId">Razorpay order ID</label><input id="orderId" autocomplete="off" required maxlength="100" placeholder="order_…">
+<label for="paymentId">Razorpay payment ID</label><input id="paymentId" autocomplete="off" required maxlength="100" placeholder="pay_…">
+<label for="email">Checkout email address</label><input id="email" type="email" autocomplete="email" required maxlength="254">
+<div class="actions"><button class="btn" id="submitBtn" type="submit">Verify purchase</button><a class="btn btn--ghost" href="./">Back to store</a></div>
+</form><div id="status" class="status" role="status" aria-live="polite"></div>
+</div></main>
+<script>
+(function(){
+const cfg=window.ZENVORA_CONFIG||{}, form=document.getElementById('recoverForm'), btn=document.getElementById('submitBtn'), status=document.getElementById('status');
+function show(msg,type){status.textContent=msg;status.className='status show '+type;}
+form.addEventListener('submit',async e=>{
+e.preventDefault();status.className='status';btn.disabled=true;btn.textContent='Verifying…';
+try{
+if(!cfg.supabaseUrl||!cfg.supabasePublishableKey)throw Error('Store configuration is unavailable.');
+const response=await fetch(cfg.supabaseUrl+'/functions/v1/recover-ebook-download',{method:'POST',headers:{'Content-Type':'application/json','apikey':cfg.supabasePublishableKey,'Authorization':'Bearer '+cfg.supabasePublishableKey},body:JSON.stringify({razorpay_order_id:document.getElementById('orderId').value.trim(),razorpay_payment_id:document.getElementById('paymentId').value.trim(),customer_email:document.getElementById('email').value.trim()})});
+const data=await response.json().catch(()=>({}));
+if(!response.ok||!data.recovered||!data.download_url)throw Error(data.error||'Could not verify this purchase.');
+const link=document.createElement('a');link.href=data.download_url;link.textContent='Download '+(data.ebook_title||'your ebook');link.className='btn';link.rel='noopener';link.target='_blank';
+status.textContent='';status.appendChild(document.createTextNode('Purchase verified. Your secure download link expires in 10 minutes. '));status.appendChild(link);status.className='status show ok';
+}catch(err){show(err.message||'Could not recover your download. Please contact support.','error')}
+finally{btn.disabled=false;btn.textContent='Verify purchase'}
+});
+})();
+</script></body></html>
