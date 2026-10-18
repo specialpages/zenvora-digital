@@ -1,0 +1,37 @@
+name: Publish Zenvora static theme
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-theme.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  install-theme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download prepared static theme
+        run: curl -fL --retry 3 "https://d2ol7oe51mr4n9.cloudfront.net/user_3JPNJV6ekUf6A6q9rMo4s7aPhTV/3121f99f-1645-482b-bab5-ebcb61e24205.zip" -o /tmp/zenvora-theme.zip
+      - name: Install theme while preserving the uploaded brand logo
+        run: |
+          mkdir -p /tmp/brand
+          cp assets/zenvora-logo.png /tmp/brand/zenvora-logo.png
+          unzip -o /tmp/zenvora-theme.zip -d .
+          cp /tmp/brand/zenvora-logo.png assets/zenvora-logo.png
+          test -f index.html
+          test -f assets/zenvora-theme.css
+          test -f assets/zenvora-theme.js
+          test -f assets/zenvora-catalogue.js
+      - name: Commit converted theme files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html ebook.json assets/zenvora-theme.css assets/zenvora-theme.js assets/zenvora-catalogue.js assets/logo-mark.png assets/favicon.png README.md
+          if git diff --cached --quiet; then
+            echo "No theme changes to commit."
+          else
+            git commit -m "Publish converted Zenvora Shopify theme [skip ci]"
+            git push
+          fi
