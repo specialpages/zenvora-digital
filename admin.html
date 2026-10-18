@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zenvora Admin</title>
+<link rel="stylesheet" href="assets/zenvora-theme.css">
+<style>
+.admin-wrap{max-width:920px;margin:40px auto;padding:20px}.admin-panel{padding:24px;border:1px solid #ded2f7;border-radius:20px;background:rgba(255,255,255,.06);margin:18px 0}.admin-form{display:grid;gap:14px}.admin-form label{display:grid;gap:7px;font-weight:600}.admin-form input,.admin-form textarea{width:100%;padding:12px;border:1px solid #b9a6df;border-radius:10px;background:#fff;color:#20113e}.admin-form button{width:max-content}.muted{opacity:.75}.status{padding:12px;border-radius:10px;margin:12px 0;overflow-wrap:anywhere}.status.error{background:#ffe7e7;color:#7b1111}.status.ok{background:#e3ffed;color:#13572d}.book-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #ddd3ee;flex-wrap:wrap;color:inherit}
+</style>
+</head>
+<body>
+<header class="container" style="padding-top:24px"><a href="./"><img src="assets/zenvora-logo.svg" alt="Zenvora Digital" width="150"></a></header>
+<main class="admin-wrap">
+<p class="eyebrow">Private workspace</p><h1>Zenvora Admin</h1>
+<p class="muted">Sign in with the admin account you create in Supabase. Public signup is intentionally not provided.</p>
+<div id="status" class="status" hidden role="status"></div>
+<section class="admin-panel" id="loginPanel"><h2>Admin sign in</h2><form id="loginForm" class="admin-form">
+<label>Email<input id="email" type="email" autocomplete="username" required></label>
+<label>Password<input id="password" type="password" autocomplete="current-password" required></label>
+<button class="btn" type="submit">Sign in</button></form></section>
+<section class="admin-panel" id="manager" hidden><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><h2>Add an ebook</h2><button class="btn btn--ghost" id="logout" type="button">Sign out</button></div>
+<p class="muted">PDFs are uploaded to the private ebooks bucket. Do not upload copyrighted material you do not have rights to sell.</p>
+<form id="bookForm" class="admin-form">
+<label>Title<input id="title" maxlength="160" required></label>
+<label>URL slug (e.g. focus-starter)<input id="slug" pattern="[a-z0-9]+(-[a-z0-9]+)*" required></label>
+<label>Description<textarea id="description" rows="3" maxlength="2000"></textarea></label>
+<label>Price in INR<input id="price" type="number" min="1" step="1" required></label>
+<label>Cover image URL (optional)<input id="cover" type="url" placeholder="https://..."></label>
+<label>PDF file<input id="pdf" type="file" accept="application/pdf,.pdf" required></label>
+<button class="btn" type="submit">Upload PDF & publish ebook</button>
+</form></section>
+<section class="admin-panel" id="listPanel" hidden><h2>Published ebooks</h2><div id="bookList" class="muted">Loading…</div></section>
+</main>
+<script src="assets/zenvora-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+const cfg=window.ZENVORA_CONFIG;const status=document.getElementById('status');
+const show=(msg,type='ok')=>{status.hidden=false;status.className='status '+type;status.textContent=msg};
+if(!cfg||!window.supabase){show('Configuration or Supabase client failed to load. Refresh and try again.','error');return}
+const client=window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey);
+const loginPanel=document.getElementById('loginPanel'),manager=document.getElementById('manager'),listPanel=document.getElementById('listPanel');
+function view(user){const yes=!!user;loginPanel.hidden=yes;manager.hidden=!yes;listPanel.hidden=!yes;if(yes)loadBooks()}
+async function loadBooks(){const el=document.getElementById('bookList');el.textContent='Loading…';const {data,error}=await client.from('ebooks').select('id,title,slug,price_paise,is_active,created_at').order('created_at',{ascending:false});if(error){el.textContent='Could not load ebooks: '+error.message;return}el.innerHTML=data.length?data.map(b=>'<div class="book-row"><span><strong>'+esc(b.title)+'</strong><br><small>'+esc(b.slug)+' · ₹'+(b.price_paise/100).toFixed(2)+' · '+(b.is_active?'Active':'Hidden')+'</small></span><button class="btn btn--ghost" data-toggle="'+b.id+'" data-active="'+b.is_active+'">'+(b.is_active?'Hide':'Publish')+'</button></div>').join(''):'No ebooks yet. Add your first ebook above.';el.querySelectorAll('[data-toggle]').forEach(btn=>btn.onclick=async()=>{const {error}=await client.from('ebooks').update({is_active:btn.dataset.active!=='true'}).eq('id',btn.dataset.toggle);if(error)show('Update failed: '+error.message,'error');else{show('Ebook status updated.');loadBooks()}})}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+document.getElementById('loginForm').onsubmit=async e=>{e.preventDefault();const {data,error}=await client.auth.signInWithPassword({email:document.getElementById('email').value,password:document.getElementById('password').value});if(error){show('Sign-in failed: '+error.message,'error');return}show('Signed in.');view(data.user)};
+document.getElementById('logout').onclick=async()=>{await client.auth.signOut();view(null);show('Signed out.')};
+document.getElementById('bookForm').onsubmit=async e=>{e.preventDefault();const button=e.submitter;button.disabled=true;try{
+const title=document.getElementById('title').value.trim(),slug=document.getElementById('slug').value.trim(),description=document.getElementById('description').value.trim(),price=Number(document.getElementById('price').value),cover=document.getElementById('cover').value.trim()||null,file=document.getElementById('pdf').files[0];
+if(!file||file.type!=='application/pdf'||file.size>50*1024*1024)throw Error('Choose a PDF no larger than 50 MB.');
+const path=slug+'/'+Date.now()+'-'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+show('Uploading PDF…');const up=await client.storage.from('ebooks').upload(path,file,{contentType:'application/pdf',upsert:false});if(up.error)throw up.error;
+show('Saving ebook details…');const ins=await client.from('ebooks').insert({slug,title,description,price_paise:Math.round(price*100),cover_url:cover,pdf_path:path,is_active:true}).select('id').single();
+if(ins.error){await client.storage.from('ebooks').remove([path]);throw ins.error}
+show('Ebook published successfully. The PDF remains private.');e.target.reset();loadBooks();
+}catch(err){show('Could not publish: '+(err.message||'Unknown error'),'error')}finally{button.disabled=false}};
+client.auth.getSession().then(({data})=>view(data.session&&data.session.user));client.auth.onAuthStateChange((_event,session)=>view(session&&session.user));
+})();
+</script>
+</body></html>
