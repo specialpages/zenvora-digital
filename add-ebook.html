@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#2a1160"><title>Add an Ebook — Zenvora Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>:root{--bg-1:#0d0620;--bg-2:#2a1160;--bg-3:#5b21b6;--accent:#a855f7;--accent-2:#7c3aed;--accent-rgb:168,85,247;--text:#f5f0ff;--muted:#b9a8e6;--blur:18px;--glass-bg:rgba(255,255,255,.10);--radius:22px}</style>
+<link rel="stylesheet" href="assets/zenvora-theme.css">
+<style>
+.admin-wrap{max-width:900px;margin:28px auto;padding:20px}.admin-panel{padding:24px;border:1px solid rgba(196,164,255,.22);border-radius:20px;background:linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.035));backdrop-filter:blur(18px);margin:18px 0;box-shadow:0 18px 55px rgba(0,0,0,.14)}.admin-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.admin-form label{display:grid;gap:7px;font-weight:600}.admin-form label:nth-child(3),.admin-form label:nth-child(6){grid-column:1/-1}.admin-form input,.admin-form textarea{width:100%;padding:13px 14px;border:1px solid rgba(196,164,255,.35);border-radius:12px;background:rgba(13,6,32,.72);color:#f5f0ff;font:inherit;min-width:0}.admin-form input:focus,.admin-form textarea:focus{outline:2px solid #a855f7;outline-offset:1px}.muted{color:#c7b8e9;opacity:.88}.status{padding:13px 15px;border-radius:12px;margin:12px 0;overflow-wrap:anywhere;border:1px solid transparent}.status[hidden]{display:none!important}.status.error{background:rgba(255,80,100,.12);border-color:rgba(255,100,120,.35);color:#ffd5db}.status.ok{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.25);color:#c8ffdc}.topline{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}@media(max-width:640px){.admin-wrap{padding:14px}.admin-panel{padding:17px}.admin-form{grid-template-columns:1fr}.admin-form label:nth-child(3),.admin-form label:nth-child(6){grid-column:auto}}
+</style>
+</head>
+<body class="template-index">
+<div class="bg-orbs" aria-hidden="true"><span></span><span></span><span></span></div>
+<header class="container" style="padding-top:24px"><a href="./"><img src="assets/zenvora-logo.svg" alt="Zenvora Digital" width="150"></a></header>
+<main class="admin-wrap">
+<div class="topline"><div><p class="eyebrow">CATALOGUE MANAGEMENT</p><h1>Add an ebook</h1><p class="muted">Upload a PDF and publish it to your Zenvora catalogue.</p></div><a class="btn btn--ghost" href="admin.html">← Back to dashboard</a></div>
+<div id="status" class="status" hidden role="status"></div>
+<section class="admin-panel" id="accessPanel" hidden><h2>Admin access required</h2><p class="muted">Sign in to your Zenvora admin account before adding an ebook.</p><a class="btn" href="admin.html">Go to admin sign in</a></section>
+<section class="admin-panel" id="uploadPanel" hidden>
+<p class="muted">PDFs are uploaded to the private <code>ebooks</code> bucket. Only upload material you have the right to sell.</p>
+<form id="bookForm" class="admin-form">
+<label>Title<input id="title" maxlength="160" required></label>
+<label>URL slug (e.g. focus-starter)<input id="slug" pattern="[a-z0-9]+(-[a-z0-9]+)*" required></label>
+<label>Description<textarea id="description" rows="3" maxlength="2000"></textarea></label>
+<label>Price in INR<input id="price" type="number" min="1" step="1" required></label>
+<label>Cover image URL (optional)<input id="cover" type="url" placeholder="https://..."></label>
+<label>PDF file<input id="pdf" type="file" accept="application/pdf,.pdf" required></label>
+<button class="btn" type="submit">Upload PDF & publish ebook</button>
+</form>
+</section>
+</main>
+<script src="assets/zenvora-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+const cfg=window.ZENVORA_CONFIG,status=document.getElementById('status'),accessPanel=document.getElementById('accessPanel'),uploadPanel=document.getElementById('uploadPanel');
+const show=(msg,type='ok')=>{status.hidden=false;status.className='status '+type;status.textContent=msg};
+if(!cfg||!window.supabase){show('Configuration or Supabase client failed to load. Refresh and try again.','error');return}
+const client=window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey);
+client.auth.getSession().then(({data,error})=>{if(error){show('Could not check admin session: '+error.message,'error');accessPanel.hidden=false;return}if(data.session&&data.session.user){uploadPanel.hidden=false}else{accessPanel.hidden=false}});
+client.auth.onAuthStateChange((_event,session)=>{if(session&&session.user){accessPanel.hidden=true;uploadPanel.hidden=false}else{uploadPanel.hidden=true;accessPanel.hidden=false}});
+document.getElementById('bookForm').onsubmit=async e=>{e.preventDefault();const button=e.submitter;button.disabled=true;try{
+const title=document.getElementById('title').value.trim(),slug=document.getElementById('slug').value.trim(),description=document.getElementById('description').value.trim(),price=Number(document.getElementById('price').value),cover=document.getElementById('cover').value.trim()||null,file=document.getElementById('pdf').files[0];
+if(!file||!(file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf'))||file.size>50*1024*1024)throw Error('Choose a PDF no larger than 50 MB.');
+if(!Number.isFinite(price)||price<1)throw Error('Enter a valid price of at least ₹1.');
+const path=slug+'/'+Date.now()+'-'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+show('Uploading PDF…');const up=await client.storage.from('ebooks').upload(path,file,{contentType:'application/pdf',upsert:false});if(up.error)throw up.error;
+show('Saving ebook details…');const ins=await client.from('ebooks').insert({slug,title,description,price_paise:Math.round(price*100),cover_url:cover,pdf_path:path,is_active:true}).select('id').single();
+if(ins.error){await client.storage.from('ebooks').remove([path]);throw ins.error}
+show('Ebook published successfully. The PDF remains private.');e.target.reset();
+}catch(err){show('Could not publish: '+(err.message||'Unknown error'),'error')}finally{button.disabled=false}
+};
+})();
+</script>
+</body></html>
