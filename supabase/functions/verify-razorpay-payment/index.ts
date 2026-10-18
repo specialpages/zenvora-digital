@@ -98,6 +98,8 @@ Deno.serve(async (req: Request) => {
         console.error("Payment record update failed:", updateError.message);
         return reply({ error: "Could not record the verified payment. Contact support; do not pay again." }, 500);
       }
+      // Only the request that successfully changes pending -> paid should send the email.
+      if (updated) newlyMarkedPaid = true;
       if (!updated) {
         // Another concurrent request may have completed this exact payment. Re-read before deciding.
         const { data: latest, error: latestError } = await supabase.from("ebook_orders")
