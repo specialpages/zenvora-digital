@@ -431,3 +431,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
 @media (max-width: 480px){.container{width:min(100% - 24px,1200px)}.hero__title{font-size:clamp(2.4rem,12vw,3.4rem)}.hero__actions .btn{width:100%}.section{margin-block:42px}.header__logo{width:138px;height:auto}}
 @media (prefers-color-scheme: light){html[data-theme="system"]{color-scheme:dark}}
 @media (prefers-reduced-motion: reduce){.bg-orbs span{animation:none!important}.card:hover,.feature:hover,.btn:hover{transform:none}}
+
+
+/* Zenvora storefront consistency fixes: keep homepage cards compact and all theme surfaces dark */
+#new-release-products .card__description,
+#bestseller-products .card__description{display:none!important}
+#new-release-products .card__body,
+#bestseller-products .card__body{gap:8px}
+html,body.template-index{background-color:#10072a}
