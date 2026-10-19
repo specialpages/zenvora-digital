@@ -1,1 +1,59 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#2a1160"><meta name="robots" content="noindex"><title>Order update — Zenvora Digital</title><link rel="icon" type="image/svg+xml" href="assets/zenvora-logo.svg"><link rel="stylesheet" href="assets/zenvora-theme.css"><style>.thanks{max-width:760px;margin:9vh auto;padding:24px}.panel{padding:clamp(24px,5vw,44px);border:1px solid #ffffff2b;border-radius:24px;background:#ffffff0d}.panel p{color:#d0bdf7;line-height:1.8}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}</style></head><body class="template-index"><main class="thanks"><div class="panel"><p class="eyebrow">ZENVORA DIGITAL</p><h1>Thanks for visiting</h1><p>This page alone does not confirm a payment. A purchase is complete only after the checkout flow confirms payment verification and shows your secure download link. If you have just paid and cannot see your download, contact support before paying again.</p><div class="actions"><a class="btn" href="ebooks.html">Browse ebooks</a><a class="btn btn--ghost" href="contact.html">Get order support</a></div></div></main></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#2a1160">
+<meta name="robots" content="noindex">
+<title>Order update — Zenvora Digital</title>
+<link rel="icon" type="image/svg+xml" href="assets/zenvora-logo.svg">
+<link rel="stylesheet" href="assets/zenvora-theme.css">
+<style>
+.thanks{max-width:760px;margin:9vh auto;padding:24px}
+.panel{padding:clamp(24px,5vw,44px);border:1px solid #ffffff2b;border-radius:24px;background:#ffffff0d}
+.panel p{color:#d0bdf7;line-height:1.8}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
+.order-status{padding:16px;border-radius:14px;margin-top:20px;background:#14532d55;border:1px solid #86efac}
+#downloadAction[hidden],#verifiedContent[hidden]{display:none!important}
+</style>
+</head>
+<body class="template-index">
+<main class="thanks">
+ <div class="panel">
+  <p class="eyebrow">ZENVORA DIGITAL</p>
+  <h1 id="pageTitle">Thanks for visiting</h1>
+  <p id="pageMessage">This page alone does not confirm a payment. A purchase is complete only after checkout confirms payment verification.</p>
+  <div id="verifiedContent" hidden>
+   <div class="order-status"><strong>Payment verified successfully.</strong><p style="margin-bottom:0">Your ebook is ready to download.</p></div>
+   <p><strong id="ebookTitle"></strong></p>
+   <p id="orderReference"></p>
+   <div class="actions" id="downloadAction" hidden><a class="btn" id="downloadLink" href="#" rel="noopener">Download your ebook</a></div>
+   <p>Save the file to your device. The secure download link may expire after a short time.</p>
+  </div>
+  <div class="actions">
+   <a class="btn btn--ghost" href="ebooks.html">Browse ebooks</a>
+   <a class="btn btn--ghost" href="contact.html">Get order support</a>
+  </div>
+ </div>
+</main>
+<script>
+(function(){
+ 'use strict';
+ var raw=null;
+ try{raw=sessionStorage.getItem('zenvoraVerifiedOrder')}catch(e){}
+ if(!raw)return;
+ var order=null;
+ try{order=JSON.parse(raw)}catch(e){}
+ if(!order||order.verified!==true||typeof order.download_url!=='string'||!order.download_url)return;
+ document.getElementById('pageTitle').textContent='Thank you for your purchase!';
+ document.getElementById('pageMessage').textContent='Your payment has been verified by Zenvora Digital.';
+ document.getElementById('verifiedContent').hidden=false;
+ document.getElementById('ebookTitle').textContent=String(order.title||'Your ebook');
+ document.getElementById('orderReference').textContent=order.order_id?'Order reference: '+String(order.order_id):'';
+ var link=document.getElementById('downloadLink');
+ link.href=order.download_url;
+ document.getElementById('downloadAction').hidden=false;
+})();
+</script>
+</body>
+</html>
