@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /add-ebook.html
+Sitemap: https://specialpages.github.io/zenvora-digital/sitemap.xml
