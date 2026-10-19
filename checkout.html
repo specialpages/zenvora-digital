@@ -69,10 +69,13 @@ document.getElementById('checkoutForm').addEventListener('submit',async function
      const verified=await invoke('verify-razorpay-payment',{razorpay_order_id:payment.razorpay_order_id,razorpay_payment_id:payment.razorpay_payment_id,razorpay_signature:payment.razorpay_signature});
      if(!verified.verified||!verified.download_url)throw new Error('Payment could not be verified or a download link was not issued. Contact support before retrying.');
      localStorage.removeItem('zenvoraCart');
-     document.getElementById('downloadLink').href=verified.download_url;
-     document.getElementById('download').className='download show';
-     show('Payment verified successfully. Your secure ebook download is ready.','ok');
-     itemsEl.innerHTML='<p><strong>'+escapeHtml(order.ebook_title||cart[0].title)+'</strong></p><p class="muted">Order: '+escapeHtml(payment.razorpay_order_id)+'</p>';
+     sessionStorage.setItem('zenvoraVerifiedOrder',JSON.stringify({
+      verified:true,
+      download_url:verified.download_url,
+      title:order.ebook_title||cart[0].title,
+      order_id:payment.razorpay_order_id
+     }));
+     window.location.replace('thank-you.html');
     }catch(err){show(err.message||'Payment verification failed. Do not pay again immediately; contact support with your Razorpay payment ID.','error')}
     finally{payButton.disabled=false;payButton.textContent='Continue to secure payment'}
    },
