@@ -39,7 +39,7 @@ function renderCart(){
  cart=getCart().filter(x=>x&&typeof x.id==='string'&&Number(x.qty)>0);
  if(!cart.length){itemsEl.innerHTML='<p class="muted">Your cart is empty. <a href="./#new-releases">Browse ebooks</a>.</p>';payButton.disabled=true;return}
  itemsEl.innerHTML=cart.map(x=>'<div class="line"><span>'+escapeHtml(x.title)+' × '+Number(x.qty)+'</span><strong>'+money(Number(x.price)*Number(x.qty))+'</strong></div>').join('')+'<div class="line"><strong>Total (estimated)</strong><strong>'+money(cart.reduce((s,x)=>s+Number(x.price||0)*Number(x.qty||0),0))+'</strong></div><p class="muted">The server will validate the actual price. For this first integration, purchase one ebook per order.</p>';
- if(cart.length!==1){payButton.disabled=true;show('Please keep only one ebook in your cart for this initial test checkout. Remove other items from the cart and try again.','error')}
+ if(cart.length!==1||Number(cart[0].qty)!==1){payButton.disabled=true;show('Checkout currently supports one ebook per order, quantity 1. Please remove extra items or reduce the quantity to 1 in your cart.','error')}
 }
 async function invoke(name,payload){
  const url=cfg.supabaseUrl+'/functions/v1/'+name;
@@ -51,7 +51,7 @@ async function invoke(name,payload){
 document.getElementById('checkoutForm').addEventListener('submit',async function(event){
  event.preventDefault();statusEl.className='status';document.getElementById('download').className='download';
  if(!cfg.supabaseUrl||!cfg.supabasePublishableKey){show('Store configuration is missing. Please contact the store owner.','error');return}
- if(cart.length!==1){show('Please checkout one ebook at a time.','error');return}
+ if(cart.length!==1||Number(cart[0].qty)!==1){show('Checkout currently supports one ebook per order, quantity 1. Please update your cart and try again.','error');return}
  if(typeof window.Razorpay!=='function'){show('Razorpay Checkout did not load. Check your connection and refresh.','error');return}
  payButton.disabled=true;payButton.textContent='Preparing secure checkout…';
  try{
