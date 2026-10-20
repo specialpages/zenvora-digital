@@ -50,7 +50,7 @@ Deno.serve(async (req: Request) => {
     const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
     if (!url || !dbKey || !keyId || !keySecret) return reply({ error: "Payment service is not configured." }, 500, req);
 
-    const supabase = createClient(url, dbKey, { auth: { persistSession: false } }, 200, req);
+    const supabase = createClient(url, dbKey, { auth: { persistSession: false } });
     const { data: orderRow, error: lookupError } = await supabase.from("ebook_orders")
       .select("id, ebook_id, customer_name, customer_email, amount_paise, currency, payment_status, razorpay_order_id, razorpay_payment_id")
       .eq("razorpay_order_id", orderId).maybeSingle();
