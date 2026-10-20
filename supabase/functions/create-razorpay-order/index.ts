@@ -43,7 +43,7 @@ Deno.serve(async (req: Request) => {
       return reply({ error: "Payment service is not configured." }, 500, req);
     }
 
-    const supabase = createClient(supabaseUrl, dbKey, { auth: { persistSession: false } }, 200, req);
+    const supabase = createClient(supabaseUrl, dbKey, { auth: { persistSession: false } });
     const { data: ebook, error } = await supabase.from("ebooks")
       .select("id, slug, title, price_paise, is_active")
       .eq("slug", slug).eq("is_active", true).maybeSingle();
