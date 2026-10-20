@@ -177,4 +177,4 @@ Deno.serve(async (req: Request) => {
     console.error("Verification error:", error instanceof Error ? error.message : "unknown");
     return reply({ error: "Unexpected verification error." }, 500, req);
   }
-}, 200, req);
+});
