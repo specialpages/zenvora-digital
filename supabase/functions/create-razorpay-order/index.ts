@@ -66,7 +66,7 @@ Deno.serve(async (req: Request) => {
         amount, currency: "INR", receipt: crypto.randomUUID(),
         notes: { ebook_id: ebook.id, ebook_slug: ebook.slug, customer_name: name, customer_email: email },
       }),
-    }, 200, req);
+    });
     const razorOrder = await r.json();
     if (!r.ok) {
       console.error("Razorpay order creation failed:", razorOrder.error?.code ?? "unknown");
@@ -77,13 +77,13 @@ Deno.serve(async (req: Request) => {
       ebook_id: ebook.id, customer_name: name, customer_email: email,
       amount_paise: amount, currency: "INR", payment_status: "pending",
       razorpay_order_id: razorOrder.id,
-    }, 200, req);
+    });
     if (insertError) {
       console.error("Could not save pending order:", insertError.message);
       return reply({ error: "Could not record the order. Please contact support before retrying." }, 500, req);
     }
 
-    return reply({ order_id: razorOrder.id, amount: razorOrder.amount, currency: razorOrder.currency, key_id: keyId, ebook_title: ebook.title }, 200, req);
+    return reply({ order_id: razorOrder.id, amount: razorOrder.amount, currency: razorOrder.currency, key_id: keyId, ebook_title: ebook.title });
   } catch (error) {
     console.error("Order function error:", error instanceof Error ? error.message : "unknown");
     return reply({ error: "Unexpected server error." }, 500, req);
