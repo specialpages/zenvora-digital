@@ -33,4 +33,6 @@ document.getElementById('year').textContent=new Date().getFullYear();
 if(!cfg.supabaseUrl||!cfg.supabasePublishableKey){results.innerHTML='<div class="empty glass"><p>The catalogue is temporarily unavailable. Please try again later.</p></div>';document.getElementById('resultCount').textContent='Catalogue unavailable';return}
 fetch(cfg.supabaseUrl+'/rest/v1/ebooks?select=id,slug,title,description,price_paise,cover_url,is_active&is_active=eq.true&order=created_at.desc',{headers:{apikey:cfg.supabasePublishableKey,Authorization:'Bearer '+cfg.supabasePublishableKey}}).then(function(r){if(!r.ok)throw Error('Catalogue request failed');return r.json()}).then(function(rows){if(!Array.isArray(rows))throw Error('Invalid catalogue response');books=rows.map(function(x){return{id:x.slug,title:x.title,description:x.description,price:Number(x.price_paise||0)/100,category:'Digital ebook',cover:x.cover_url,published:x.is_active}});render()}).catch(function(){results.innerHTML='<div class="empty glass"><h2>We couldn’t load the catalogue</h2><p>Please check your connection and try again.</p><button class="btn" type="button" id="retry">Try again</button></div>';document.getElementById('resultCount').textContent='Catalogue unavailable';document.getElementById('retry').addEventListener('click',function(){location.reload()})});
 })();
-</script></body></html>
+</script><script src="assets/zenvora-config.js" defer></script>
+<script src="assets/zenvora-analytics.js" defer></script>
+</body></html>
