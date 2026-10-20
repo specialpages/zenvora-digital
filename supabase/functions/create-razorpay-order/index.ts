@@ -88,4 +88,4 @@ Deno.serve(async (req: Request) => {
     console.error("Order function error:", error instanceof Error ? error.message : "unknown");
     return reply({ error: "Unexpected server error." }, 500, req);
   }
-}, 200, req);
+});
