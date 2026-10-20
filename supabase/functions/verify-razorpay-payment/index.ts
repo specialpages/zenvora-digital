@@ -73,7 +73,7 @@ Deno.serve(async (req: Request) => {
     const auth = btoa(keyId + ":" + keySecret);
     const paymentResponse = await fetch("https://api.razorpay.com/v1/payments/" + encodeURIComponent(paymentId), {
       headers: { Authorization: "Basic " + auth },
-    }, 200, req);
+    });
     const payment = await paymentResponse.json();
     if (!paymentResponse.ok) return reply({ error: "Could not verify payment with Razorpay." }, 502, req);
     if (payment.order_id !== orderId || payment.status !== "captured" ||
@@ -132,7 +132,7 @@ Deno.serve(async (req: Request) => {
     if (newlyMarkedPaid) {
       const resendKey = Deno.env.get("RESEND_API_KEY");
       const emailFrom = Deno.env.get("ZENVORA_EMAIL_FROM");
-      console.log("Purchase confirmation email: starting", { hasResendKey: Boolean(resendKey), hasSender: Boolean(emailFrom), hasCustomerEmail: Boolean(orderRow.customer_email), orderId }, 200, req);
+      console.log("Purchase confirmation email: starting", { hasResendKey: Boolean(resendKey), hasSender: Boolean(emailFrom), hasCustomerEmail: Boolean(orderRow.customer_email), orderId });
       if (resendKey && emailFrom && orderRow.customer_email) {
         try {
           const { data: emailLink, error: emailLinkError } = await supabase.storage
@@ -172,7 +172,7 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    return reply({ verified: true, ebook_title: ebook.title, download_url: signed.signedUrl, expires_in_seconds: 600 }, 200, req);
+    return reply({ verified: true, ebook_title: ebook.title, download_url: signed.signedUrl, expires_in_seconds: 600 });
   } catch (error) {
     console.error("Verification error:", error instanceof Error ? error.message : "unknown");
     return reply({ error: "Unexpected verification error." }, 500, req);
